@@ -1,0 +1,142 @@
+# Laravel Framework
+/.phpunit.cache
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.env.backup
+.env.production
+.env.local
+.env.*.local
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+/.fleet
+/.idea
+/.vscode
+
+# Laravel Storage (uploaded files - keep structure, ignore content)
+/storage/app/public/*
+!/storage/app/public/.gitignore
+/storage/framework/cache/data/*
+!/storage/framework/cache/data/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
+
+# Laravel Bootstrap Cache
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+
+# Docker
+docker-compose.override.yml
+/.docker
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDE & Editors
+*.swp
+*.swo
+*~
+.project
+.settings
+.buildpath
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/*
+*.sublime-project
+*.sublime-workspace
+.phpstorm.meta.php
+_ide_helper.php
+_ide_helper_models.php
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+/coverage
+/.phpunit.cache
+.phpunit.result.cache
+
+# Build artifacts
+/public/mix-manifest.json
+/public/css
+/public/js
+
+# Composer
+composer.phar
+composer.lock.bak
+
+# NPM/Yarn
+package-lock.json.bak
+yarn.lock.bak
+
+# Temporary files
+augment-cwd-*.txt
+augment-script-*.log
+exthost-*.cpuprofile
+fz3temp-*
+hsperfdata_*
+node-compile-cache
+node-jiti
+pyright-*
+python-languageserver-cancellation
+qemu-console*
+scoped_dir*
+snap-private-tmp
+systemd-private-*
+tmp.*
+vscode-typescript*
+*.tmp
+*.temp
+*.cache
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Database
+*.sqlite
+*.sqlite-journal
+*.db
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Windows
+[Tt]humbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.Trash-*
+

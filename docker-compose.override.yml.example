@@ -1,0 +1,49 @@
+# Docker Compose Override Example
+# Copy this file to docker-compose.override.yml to customize your local environment
+# This file is automatically loaded by docker-compose and overrides docker-compose.yml
+
+version: '3.8'
+
+services:
+  # Example: Add Mailpit for email testing
+  mailpit:
+    image: axllent/mailpit
+    container_name: songslab-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - songslab-network
+
+  # Example: Add phpMyAdmin for database management
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: songslab-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: songslab_user
+      PMA_PASSWORD: songslab_pass
+    ports:
+      - "8082:80"
+    networks:
+      - songslab-network
+    depends_on:
+      - db
+
+  # Example: Add Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: songslab-redis-commander
+    restart: unless-stopped
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8083:8081"
+    networks:
+      - songslab-network
+    depends_on:
+      - redis
+
