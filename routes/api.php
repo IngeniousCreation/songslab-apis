@@ -45,8 +45,8 @@ Route::prefix('email')->group(function () {
     });
 });
 
-// Song Management Routes
-Route::prefix('songs')->middleware('auth.token')->group(function () {
+// Song Management Routes (Songwriter only)
+Route::prefix('songs')->middleware(['auth.token', 'songwriter'])->group(function () {
     Route::get('/', [SongController::class, 'index']); // List all songs
     Route::post('/', [SongController::class, 'store']); // Upload new song
     Route::get('/statistics', [SongController::class, 'statistics']); // Get statistics

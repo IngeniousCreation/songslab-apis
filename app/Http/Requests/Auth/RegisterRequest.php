@@ -34,6 +34,7 @@ class RegisterRequest extends FormRequest
                 ->uncompromised()
             ],
             'description' => ['nullable', 'string', 'max:1000'],
+            'role' => ['nullable', 'string', 'in:songwriter,listener'],
         ];
     }
 
