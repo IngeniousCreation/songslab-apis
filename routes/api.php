@@ -78,6 +78,10 @@ Route::get('feedback-topics', [FeedbackTopicController::class, 'index']);
 Route::post('feedback', [FeedbackController::class, 'store']);
 
 // Feedback Management (authenticated - for songwriters)
+Route::middleware('auth.token')->group(function () {
+    Route::get('feedback/all', [FeedbackController::class, 'getAllFeedback']); // Get all feedback for all songs
+});
+
 Route::prefix('songs/{songId}/feedback')->middleware('auth.token')->group(function () {
     Route::get('/', [FeedbackController::class, 'index']); // Get all feedback for a song
     Route::patch('/{feedbackId}/visibility', [FeedbackController::class, 'updateVisibility']); // Update visibility
