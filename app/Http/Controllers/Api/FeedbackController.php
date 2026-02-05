@@ -125,6 +125,46 @@ class FeedbackController extends Controller
     }
 
     /**
+     * Get all feedback given by the listener (listener only)
+     */
+    public function getMyGivenFeedback(Request $request)
+    {
+        $user = $request->user();
+
+        // Get all sounding board member records for this user
+        $memberIds = SoundingBoardMember::where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->pluck('id');
+
+        // Get all feedback given by this user through their sounding board memberships
+        $feedback = Feedback::whereIn('sounding_board_member_id', $memberIds)
+            ->with(['song' => function ($query) {
+                $query->select('id', 'title', 'user_id')
+                    ->with(['user' => function ($q) {
+                        $q->select('id', 'name');
+                    }]);
+            }, 'feedbackTopic'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get unique songs count
+        $songsCount = $feedback->pluck('song_id')->unique()->count();
+
+        // Get unique songwriters count
+        $songwritersCount = $feedback->pluck('song.user_id')->unique()->count();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'feedback' => $feedback,
+                'total_count' => $feedback->count(),
+                'songs_count' => $songsCount,
+                'songwriters_count' => $songwritersCount,
+            ],
+        ]);
+    }
+
+    /**
      * Get all feedback for a song (songwriter only)
      */
     public function index(Request $request, $songId)

@@ -77,9 +77,10 @@ Route::get('feedback-topics', [FeedbackTopicController::class, 'index']);
 // Feedback Submission (public - for sounding board members)
 Route::post('feedback', [FeedbackController::class, 'store']);
 
-// Feedback Management (authenticated - for songwriters)
+// Feedback Management (authenticated)
 Route::middleware('auth.token')->group(function () {
-    Route::get('feedback/all', [FeedbackController::class, 'getAllFeedback']); // Get all feedback for all songs
+    Route::get('feedback/all', [FeedbackController::class, 'getAllFeedback']); // Get all feedback for all songs (songwriter)
+    Route::get('feedback/my-given', [FeedbackController::class, 'getMyGivenFeedback']); // Get all feedback given by listener
 });
 
 Route::prefix('songs/{songId}/feedback')->middleware('auth.token')->group(function () {
