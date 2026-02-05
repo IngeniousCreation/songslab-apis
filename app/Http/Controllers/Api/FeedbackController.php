@@ -132,7 +132,11 @@ class FeedbackController extends Controller
         $user = $request->user();
 
         // Get all sounding board member records for this user
-        $memberIds = SoundingBoardMember::where('user_id', $user->id)
+        // Match by both user_id (if linked) and email (for feedback given before account creation)
+        $memberIds = SoundingBoardMember::where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                      ->orWhere('email', $user->email);
+            })
             ->where('status', 'approved')
             ->pluck('id');
 
