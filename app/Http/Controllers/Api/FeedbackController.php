@@ -143,7 +143,7 @@ class FeedbackController extends Controller
         // Get all feedback given by this user through their sounding board memberships
         $feedback = Feedback::whereIn('sounding_board_member_id', $memberIds)
             ->with(['song' => function ($query) {
-                $query->select('id', 'title', 'user_id')
+                $query->select('id', 'title', 'user_id', 'share_token')
                     ->with(['user' => function ($q) {
                         $q->select('id', 'name');
                     }]);
