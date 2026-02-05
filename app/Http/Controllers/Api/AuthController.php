@@ -36,6 +36,7 @@ class AuthController extends Controller
                 'description' => $request->description,
                 'role' => $request->role ?? 'songwriter',
                 'is_beta_user' => false,
+                'redirect_after_verification' => $request->redirect_url,
             ]);
 
             // Create token
@@ -58,6 +59,11 @@ class AuthController extends Controller
             $verificationUrl = config('app.frontend_url', 'http://localhost:3004') .
                 '/verify-email?token=' . $verificationToken .
                 '&email=' . urlencode($user->email);
+
+            // Add redirect parameter if present
+            if ($user->redirect_after_verification) {
+                $verificationUrl .= '&redirect=' . urlencode($user->redirect_after_verification);
+            }
 
             // Send verification email
             try {

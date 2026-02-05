@@ -30,6 +30,7 @@ class User extends Authenticatable
         'description',
         'role',
         'is_beta_user',
+        'redirect_after_verification',
     ];
 
     /**

@@ -46,6 +46,11 @@ class EmailVerificationController extends Controller
         // Create verification URL
         $verificationUrl = config('app.frontend_url') . '/verify-email?token=' . $token . '&email=' . urlencode($user->email);
 
+        // Add redirect parameter if present
+        if ($user->redirect_after_verification) {
+            $verificationUrl .= '&redirect=' . urlencode($user->redirect_after_verification);
+        }
+
         // Send verification email
         try {
             Mail::send([], [], function ($message) use ($user, $verificationUrl) {
@@ -124,8 +129,9 @@ class EmailVerificationController extends Controller
             ], 400);
         }
 
-        // Mark email as verified
+        // Mark email as verified and clear redirect
         $user->email_verified_at = now();
+        $user->redirect_after_verification = null;
         $user->save();
 
         // Delete used token
