@@ -27,7 +27,7 @@ class EnsureSongwriter
         if ($user->role !== 'songwriter' && $user->role !== 'admin') {
             return response()->json([
                 'success' => false,
-                'message' => 'This action is only available to songwriters. Listeners can provide feedback but cannot upload songs.',
+                'message' => 'This action is only available to songwriters. Sounding Board Members can provide feedback but cannot upload songs.',
             ], 403);
         }
 

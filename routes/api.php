@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\FeedbackController;
 use App\Http\Controllers\Api\FeedbackTopicController;
 use App\Http\Controllers\Api\SongController;
 use App\Http\Controllers\Api\SoundingBoardController;
+use App\Http\Controllers\Api\AppFeedbackController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -87,3 +88,6 @@ Route::prefix('songs/{songId}/feedback')->middleware('auth.token')->group(functi
     Route::get('/', [FeedbackController::class, 'index']); // Get all feedback for a song
     Route::patch('/{feedbackId}/visibility', [FeedbackController::class, 'updateVisibility']); // Update visibility
 });
+
+// App Feedback (only authenticated users)
+Route::post('app-feedback', [AppFeedbackController::class, 'submit'])->middleware('auth.token');

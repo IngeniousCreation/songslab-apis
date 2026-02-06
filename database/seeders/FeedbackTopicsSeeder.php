@@ -13,7 +13,7 @@ class FeedbackTopicsSeeder extends Seeder
     public function run(): void
     {
         $topics = [
-            ['key' => 'general_comments', 'label' => 'General Comments', 'order' => 0],
+            ['key' => 'general_comments', 'label' => 'Comment', 'order' => 0],
             ['key' => 'lyrics', 'label' => 'My lyrics; are there any you like in particular and/or some that pull your attention out of the experience', 'order' => 1],
             ['key' => 'melodies', 'label' => 'Melodies; where is the melodic structure strong and where could it be improved', 'order' => 2],
             ['key' => 'genre', 'label' => 'What genre do you associate with this song', 'order' => 3],
