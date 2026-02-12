@@ -47,7 +47,7 @@ class AppFeedbackController extends Controller
         try {
             Mail::send([], [], function ($message) use ($userName, $userEmail, $userRole, $emojiDisplay, $comment) {
                 $message->to('ingeniouscreations8@gmail.com')
-                    ->subject('SongsLab App Feedback - ' . $emojiDisplay)
+                    ->subject('SongSlab App Feedback - ' . $emojiDisplay)
                     ->html($this->getAppFeedbackEmailHtml($userName, $userEmail, $userRole, $emojiDisplay, $comment));
             });
 
@@ -108,7 +108,7 @@ class AppFeedbackController extends Controller
                     <tr>
                         <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, #ff8234 0%, #ff5a5d 100%);">
                             <h1 style="margin: 0; color: #ffffff; font-size: 28px;">
-                                SongsLab App Feedback
+                                SongSlab App Feedback
                             </h1>
                         </td>
                     </tr>
@@ -152,7 +152,7 @@ class AppFeedbackController extends Controller
                         <td style="padding: 30px 40px; text-align: center; border-top: 1px solid #444444;">
                             <p style="color: #999999; font-size: 12px; margin: 0;">
                                 Submitted on {$this->getCurrentDateTime()}<br>
-                                © 2026 SongsLab. All rights reserved.
+                                © 2026 SongSlab. All rights reserved.
                             </p>
                         </td>
                     </tr>

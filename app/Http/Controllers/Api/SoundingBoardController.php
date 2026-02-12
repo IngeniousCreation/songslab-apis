@@ -55,39 +55,41 @@ class SoundingBoardController extends Controller
             ], 409);
         }
 
-        // Create access request
+        // Create and auto-approve sounding board member
         $member = SoundingBoardMember::create([
             'song_id' => $song->id,
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
             'contact_preference' => $request->contact_preference,
-            'status' => 'pending',
+            'status' => 'approved', // Auto-approve instead of pending
             'requested_at' => now(),
+            'responded_at' => now(),
+            'responded_by' => $song->user_id, // Auto-approved by system on behalf of songwriter
         ]);
 
-        // Send notification email to songwriter
+        // Send welcome email to member with share link
         try {
-            $songwriter = $song->user;
-            Mail::send([], [], function ($message) use ($songwriter, $member, $song) {
-                $message->to($songwriter->email, $songwriter->name)
-                    ->subject('New Access Request for "' . $song->title . '" - SongsLab')
-                    ->html($this->getAccessRequestEmailHtml($songwriter->name, $member->name, $song->title));
+            $shareLink = $song->getShareLink();
+            Mail::send([], [], function ($message) use ($member, $song, $shareLink) {
+                $message->to($member->email, $member->name)
+                    ->subject('Welcome to ' . $song->user->name . '\'s Sounding Board - SongSlab')
+                    ->html($this->getWelcomeEmailHtml($member->name, $song->title, $song->user->name, $shareLink));
             });
         } catch (\Exception $e) {
-            \Log::error('Failed to send access request notification', [
+            \Log::error('Failed to send welcome email', [
                 'error' => $e->getMessage(),
-                'songwriter' => $songwriter->email,
                 'member' => $member->email,
             ]);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Access request submitted successfully. The songwriter will be notified.',
+            'message' => 'Welcome! You now have access to the song.',
             'data' => [
-                'request_id' => $member->id,
+                'member_id' => $member->id,
                 'status' => $member->status,
+                'share_link' => $song->getShareLink(),
             ],
         ], 201);
     }
@@ -196,7 +198,7 @@ class SoundingBoardController extends Controller
             $shareLink = $song->getShareLink();
             Mail::send([], [], function ($message) use ($member, $song, $shareLink) {
                 $message->to($member->email, $member->name)
-                    ->subject('Access Approved for "' . $song->title . '" - SongsLab')
+                    ->subject('Access Approved for "' . $song->title . '" - SongSlab')
                     ->html($this->getAccessApprovedEmailHtml($member->name, $song->title, $song->user->name, $shareLink));
             });
         } catch (\Exception $e) {
@@ -390,7 +392,7 @@ class SoundingBoardController extends Controller
                     <tr>
                         <td style="padding: 20px 40px 40px; text-align: center;">
                             <p style="color: #999999; font-size: 12px; margin: 0;">
-                                © 2026 SongsLab. All rights reserved.
+                                © 2026 SongSlab. All rights reserved.
                             </p>
                         </td>
                     </tr>
@@ -455,7 +457,72 @@ HTML;
                     <tr>
                         <td style="padding: 20px 40px 40px; text-align: center;">
                             <p style="color: #999999; font-size: 12px; margin: 0;">
-                                © 2026 SongsLab. All rights reserved.
+                                © 2026 SongSlab. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * Get HTML template for welcome email (auto-approved members)
+     */
+    private function getWelcomeEmailHtml(string $memberName, string $songTitle, string $songwriterName, string $shareLink): string
+    {
+        return <<<HTML
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Sounding Board</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #1a1a1a;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #2d2d2d; border-radius: 12px; overflow: hidden;">
+                    <tr>
+                        <td style="padding: 40px 40px 20px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 32px;">
+                                <span style="color: #ffffff;">Song</span><span style="color: #ff8234;">Slab</span>
+                            </h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 20px 40px;">
+                            <h2 style="color: #ffffff; font-size: 24px; margin: 0 0 20px;">Hi {$memberName},</h2>
+                            <p style="color: #d7d7d7; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                You are invited to become a Sounding Board member, to listen to <strong style="color: #ff8234;">{$songwriterName}'s</strong> song, <strong>"{$songTitle}"</strong> and to share your feedback.
+                            </p>
+                            <p style="color: #d7d7d7; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
+                                Click the button below to listen to the song and provide your feedback:
+                            </p>
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding: 20px 0;">
+                                        <a href="{$shareLink}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(to right, #ff8234, #ff5a5d); color: #ffffff; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                                            Listen to Song
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="color: #999999; font-size: 12px; line-height: 1.6; margin: 30px 0 0; padding-top: 20px; border-top: 1px solid #444444;">
+                                Or copy and paste this URL into your browser:<br>
+                                <a href="{$shareLink}" style="color: #ff8234; text-decoration: none;">{$shareLink}</a>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 20px 40px 40px; text-align: center;">
+                            <p style="color: #999999; font-size: 12px; margin: 0;">
+                                © 2026 SongSlab. All rights reserved.
                             </p>
                         </td>
                     </tr>
