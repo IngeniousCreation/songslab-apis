@@ -146,6 +146,7 @@ class AuthController extends Controller
                     'role' => $user->role,
                     'is_beta_user' => $user->is_beta_user,
                     'profile_image' => $user->profile_image,
+                    'email_verified_at' => $user->email_verified_at,
                 ],
                 'access_token' => $token,
                 'token_type' => 'Bearer',
@@ -256,7 +257,7 @@ class AuthController extends Controller
                         <td style="padding: 20px 40px;">
                             <h2 style="color: #ffffff; font-size: 24px; margin: 0 0 20px;">Hi {$name},</h2>
                             <p style="color: #d7d7d7; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
-                                Welcome to SongsLab! We're excited to have you join our community of songwriters and music enthusiasts.
+                                Welcome to SongSlab! We're excited to have you join our community of songwriters and music enthusiasts.
                             </p>
                             <p style="color: #d7d7d7; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
                                 Please verify your email address by clicking the button below:
@@ -281,7 +282,7 @@ class AuthController extends Controller
                             </p>
 
                             <p style="color: #999999; font-size: 12px; line-height: 1.6; margin: 30px 0 0; padding-top: 20px; border-top: 1px solid #444444;">
-                                This link will expire in 24 hours. If you didn't create an account with SongsLab, you can safely ignore this email.
+                                This link will expire in 24 hours. If you didn't create an account with SongSlab, you can safely ignore this email.
                             </p>
                         </td>
                     </tr>
@@ -290,7 +291,7 @@ class AuthController extends Controller
                     <tr>
                         <td style="padding: 20px 40px 40px; text-align: center;">
                             <p style="color: #999999; font-size: 12px; margin: 0;">
-                                © 2026 SongsLab. All rights reserved.
+                                © 2026 SongSlab. All rights reserved.
                             </p>
                         </td>
                     </tr>
