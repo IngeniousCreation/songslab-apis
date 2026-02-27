@@ -18,17 +18,17 @@ class DiscussionController extends Controller
     public function index(Request $request, $songId)
     {
         $user = $request->user();
-        
+
         // Find the song
         $song = Song::find($songId);
-        
+
         if (!$song) {
             return response()->json([
                 'success' => false,
                 'message' => 'Song not found',
             ], 404);
         }
-        
+
         // Check if user has access (is songwriter OR is approved sounding board member)
         $isSongwriter = $song->user_id === $user->id;
         $isSoundingBoardMember = SoundingBoardMember::where('song_id', $songId)
@@ -38,21 +38,35 @@ class DiscussionController extends Controller
             })
             ->where('status', 'approved')
             ->exists();
-        
+
         if (!$isSongwriter && !$isSoundingBoardMember) {
             return response()->json([
                 'success' => false,
                 'message' => 'You do not have access to this discussion',
             ], 403);
         }
-        
-        // Get all top-level comments with nested replies
-        $discussions = Feedback::forSongWithReplies($songId)->get();
-        
+
+        // Get pagination parameters
+        $limit = $request->input('limit', 30);
+        $offset = $request->input('offset', 0);
+
+        // Get total count of top-level discussions
+        $totalCount = Feedback::where('song_id', $songId)
+            ->topLevel()
+            ->count();
+
+        // Get paginated top-level comments with nested replies
+        $discussions = Feedback::forSongWithReplies($songId)
+            ->skip($offset)
+            ->take($limit)
+            ->get();
+
         return response()->json([
             'success' => true,
             'data' => [
                 'discussions' => $discussions,
+                'total_count' => $totalCount,
+                'has_more' => ($offset + $limit) < $totalCount,
                 'song' => [
                     'id' => $song->id,
                     'title' => $song->title,
