@@ -79,10 +79,13 @@ class Feedback extends Model
 
     /**
      * Get all nested replies recursively (with user information)
+     * This is a proper relationship that can be used with eager loading
      */
     public function repliesWithUser()
     {
-        return $this->replies()->with(['user', 'soundingBoardMember', 'repliesWithUser']);
+        return $this->hasMany(Feedback::class, 'parent_id')
+            ->with(['user', 'soundingBoardMember', 'feedbackTopic', 'repliesWithUser'])
+            ->orderBy('created_at', 'asc');
     }
 
     /**
