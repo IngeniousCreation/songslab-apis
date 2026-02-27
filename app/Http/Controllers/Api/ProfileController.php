@@ -103,6 +103,9 @@ class ProfileController extends Controller
                 $user->description = $request->description;
             }
 
+            // Unset accessToken property set by HasApiTokens trait before saving
+            unset($user->accessToken);
+
             $user->save();
 
             return response()->json([
