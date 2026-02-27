@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Feedback;
 use App\Models\Song;
 use App\Models\SoundingBoardMember;
+use App\Utils\ContentFilter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -94,12 +95,21 @@ class DiscussionController extends Controller
             'parent_id' => 'nullable|exists:feedback,id',
             'feedback_topic_id' => 'nullable|exists:feedback_topics,id',
         ]);
-        
+
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
                 'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        // Content filtering - block spam, URLs, Russian, Chinese
+        $contentValidation = ContentFilter::validate($request->content);
+        if (!$contentValidation['is_valid']) {
+            return response()->json([
+                'success' => false,
+                'message' => $contentValidation['reason'],
             ], 422);
         }
         
@@ -151,7 +161,15 @@ class DiscussionController extends Controller
             'feedback_topic_id' => $request->feedback_topic_id,
             'content' => $request->content,
         ]);
-        
+
+        // Debug logging
+        \Log::info('Comment created', [
+            'id' => $comment->id,
+            'parent_id' => $comment->parent_id,
+            'depth' => $comment->depth,
+            'content' => $comment->content,
+        ]);
+
         // Load relationships
         $comment->load(['user', 'soundingBoardMember', 'feedbackTopic']);
         
