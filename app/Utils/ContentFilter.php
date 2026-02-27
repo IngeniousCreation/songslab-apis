@@ -32,6 +32,11 @@ class ContentFilter
             return ['is_valid' => false, 'reason' => 'Content contains prohibited words'];
         }
 
+        // Check for bad/profane words
+        if (self::containsBadWords($content)) {
+            return ['is_valid' => false, 'reason' => 'Content contains inappropriate language'];
+        }
+
         return ['is_valid' => true, 'reason' => null];
     }
 
@@ -86,6 +91,45 @@ class ContentFilter
         
         foreach ($spamWords as $spamWord) {
             if (stripos($contentLower, $spamWord) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if content contains bad/profane words
+     */
+    private static function containsBadWords(string $content): bool
+    {
+        $badWords = [
+            // Profanity
+            'fuck', 'shit', 'bitch', 'asshole', 'bastard', 'damn', 'hell',
+            'crap', 'piss', 'dick', 'cock', 'pussy', 'cunt', 'whore', 'slut',
+            'fag', 'faggot', 'nigger', 'nigga', 'retard', 'retarded',
+
+            // Variations and common misspellings
+            'f*ck', 'f**k', 'sh*t', 'sh!t', 'b*tch', 'a**hole', 'a$$hole',
+            'fuk', 'fck', 'fuq', 'phuck', 'shyt', 'biatch', 'beotch',
+
+            // Slurs and hate speech
+            'chink', 'spic', 'kike', 'wetback', 'towelhead', 'raghead',
+
+            // Sexual content
+            'porn', 'xxx', 'sex', 'nude', 'naked', 'boobs', 'tits', 'ass',
+            'anal', 'blowjob', 'handjob', 'masturbate', 'orgasm',
+
+            // Drugs
+            'cocaine', 'heroin', 'meth', 'weed', 'marijuana', 'cannabis',
+            'ecstasy', 'molly', 'lsd', 'crack',
+        ];
+
+        $contentLower = strtolower($content);
+
+        foreach ($badWords as $badWord) {
+            // Use word boundaries to avoid false positives
+            if (preg_match('/\b' . preg_quote($badWord, '/') . '\b/i', $contentLower)) {
                 return true;
             }
         }
