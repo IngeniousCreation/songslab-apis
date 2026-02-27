@@ -39,7 +39,7 @@ class SoundingBoardMember extends Model
     }
 
     /**
-     * Get the user (if they have an account)
+     * Get the linked user account (if exists)
      */
     public function user()
     {

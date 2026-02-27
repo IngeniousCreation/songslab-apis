@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Song;
 use App\Models\SongFile;
 use App\Models\Lyrics;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -404,7 +405,8 @@ class SongController extends Controller
             ]);
         }
 
-        // Check if user has access
+        // Check if user has access - support both old (email) and new (user_id) structure
+        // Check if user has access via sounding board membership
         $member = $song->soundingBoardMembers()->where('email', $email)->first();
 
         if (!$member) {

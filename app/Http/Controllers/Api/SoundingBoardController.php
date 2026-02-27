@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Song;
 use App\Models\SoundingBoardMember;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class SoundingBoardController extends Controller
 {
@@ -40,24 +43,24 @@ class SoundingBoardController extends Controller
             ], 404);
         }
 
-        // Check if already has a request
-        $email = $request->email;
-        if ($song->hasExistingRequest($email)) {
-            $existingRequest = $song->soundingBoardMembers()->where('email', $email)->first();
-            
+        // Check if already has a request for this song
+        $existingMember = $song->soundingBoardMembers()->where('email', $request->email)->first();
+
+        if ($existingMember) {
             return response()->json([
                 'success' => false,
                 'message' => 'You already have a request for this song',
                 'data' => [
-                    'status' => $existingRequest->status,
-                    'requested_at' => $existingRequest->requested_at,
+                    'status' => $existingMember->status,
+                    'requested_at' => $existingMember->requested_at,
                 ],
             ], 409);
         }
 
-        // Create and auto-approve sounding board member
+        // Create sounding board member
         $member = SoundingBoardMember::create([
             'song_id' => $song->id,
+            'user_id' => null, // Will be linked later if they create an account
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
@@ -71,15 +74,15 @@ class SoundingBoardController extends Controller
         // Send welcome email to member with share link
         try {
             $shareLink = $song->getShareLink();
-            Mail::send([], [], function ($message) use ($member, $song, $shareLink) {
-                $message->to($member->email, $member->name)
+            Mail::send([], [], function ($message) use ($request, $song, $shareLink) {
+                $message->to($request->email, $request->name)
                     ->subject('Welcome to ' . $song->user->name . '\'s Sounding Board - SongSlab')
-                    ->html($this->getWelcomeEmailHtml($member->name, $song->title, $song->user->name, $shareLink));
+                    ->html($this->getWelcomeEmailHtml($request->name, $song->title, $song->user->name, $shareLink));
             });
         } catch (\Exception $e) {
             \Log::error('Failed to send welcome email', [
                 'error' => $e->getMessage(),
-                'member' => $member->email,
+                'member' => $request->email,
             ]);
         }
 
@@ -95,6 +98,26 @@ class SoundingBoardController extends Controller
     }
 
     /**
+     * Generate a unique username from email
+     */
+    private function generateUsername(string $email): string
+    {
+        $base = strtolower(explode('@', $email)[0]);
+        $base = preg_replace('/[^a-z0-9_]/', '', $base);
+        $base = substr($base, 0, 20);
+
+        $username = $base;
+        $counter = 1;
+
+        while (User::where('username', $username)->exists()) {
+            $username = $base . $counter;
+            $counter++;
+        }
+
+        return $username;
+    }
+
+    /**
      * Get all sounding board members for authenticated user's songs
      */
     public function index(Request $request)
@@ -104,7 +127,7 @@ class SoundingBoardController extends Controller
         $members = SoundingBoardMember::whereHas('song', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })
-        ->with(['song:id,title', 'user:id,name,email'])
+        ->with(['song:id,title'])
         ->orderBy('requested_at', 'desc')
         ->get();
 
@@ -130,6 +153,49 @@ class SoundingBoardController extends Controller
     }
 
     /**
+     * Get approved songs for sounding board member
+     */
+    public function getApprovedSongs(Request $request)
+    {
+        $user = $request->user();
+        $perPage = $request->get('per_page', 6);
+        $page = $request->get('page', 1);
+
+        // Get all approved sounding board memberships for this user
+        // Match by both user_id (if linked) and email (for memberships created before account)
+        $query = SoundingBoardMember::where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhere('email', $user->email);
+            })
+            ->where('status', 'approved')
+            ->with(['song' => function ($query) {
+                $query->select('id', 'title', 'description', 'development_stage', 'share_token', 'user_id', 'created_at')
+                      ->with(['user:id,name,email', 'currentAudioFile']);
+            }])
+            ->orderBy('responded_at', 'desc');
+
+        $memberships = $query->paginate($perPage, ['*'], 'page', $page);
+
+        // Extract songs from memberships
+        $songs = $memberships->getCollection()->map(function ($membership) {
+            return $membership->song;
+        })->filter(); // Remove any null songs
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'songs' => $songs,
+                'pagination' => [
+                    'current_page' => $memberships->currentPage(),
+                    'last_page' => $memberships->lastPage(),
+                    'per_page' => $memberships->perPage(),
+                    'total' => $memberships->total(),
+                ],
+            ],
+        ]);
+    }
+
+    /**
      * Get sounding board members for a specific song
      */
     public function getSongMembers(Request $request, $songId)
@@ -148,7 +214,6 @@ class SoundingBoardController extends Controller
         }
 
         $members = $song->soundingBoardMembers()
-            ->with(['user:id,name,email'])
             ->orderBy('requested_at', 'desc')
             ->get();
 
@@ -314,6 +379,7 @@ class SoundingBoardController extends Controller
             ], 404);
         }
 
+        // Check for existing member by email
         $member = $song->soundingBoardMembers()->where('email', $email)->first();
 
         if (!$member) {

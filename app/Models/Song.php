@@ -179,9 +179,9 @@ class Song extends Model
     }
 
     /**
-     * Check if a user/email has access to this song
+     * Check if a user has access to this song
      */
-    public function hasAccess(?int $userId = null, ?string $email = null): bool
+    public function hasAccess(?int $userId = null): bool
     {
         // Owner always has access
         if ($userId && $this->user_id === $userId) {
@@ -189,45 +189,42 @@ class Song extends Model
         }
 
         // Check if approved as sounding board member
-        $query = $this->soundingBoardMembers()->approved();
-
         if ($userId) {
-            $query->where('user_id', $userId);
-        } elseif ($email) {
-            $query->where('email', $email);
-        } else {
-            return false;
+            return $this->soundingBoardMembers()
+                ->approved()
+                ->where('user_id', $userId)
+                ->exists();
         }
 
-        return $query->exists();
+        return false;
     }
 
     /**
-     * Get pending request for an email
+     * Get pending request for a user
      */
-    public function getPendingRequest(?string $email = null)
+    public function getPendingRequest(?int $userId = null)
     {
-        if (!$email) {
+        if (!$userId) {
             return null;
         }
 
         return $this->soundingBoardMembers()
-            ->where('email', $email)
+            ->where('user_id', $userId)
             ->where('status', 'pending')
             ->first();
     }
 
     /**
-     * Check if email already has a request (any status)
+     * Check if user already has a request (any status)
      */
-    public function hasExistingRequest(?string $email = null): bool
+    public function hasExistingRequest(?int $userId = null): bool
     {
-        if (!$email) {
+        if (!$userId) {
             return false;
         }
 
         return $this->soundingBoardMembers()
-            ->where('email', $email)
+            ->where('user_id', $userId)
             ->exists();
     }
 }

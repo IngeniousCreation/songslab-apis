@@ -53,16 +53,18 @@ return new class extends Migration
         Schema::table('feedback', function (Blueprint $table) {
             // Re-add visibility column
             $table->enum('visibility', ['private', 'group'])->default('private');
-            
-            // Drop new columns
+
+            // Drop foreign keys first
             $table->dropForeign(['parent_id']);
-            $table->dropIndex(['parent_id']);
-            $table->dropIndex(['user_id']);
+            $table->dropForeign(['user_id']);
+
+            // Drop indexes
             $table->dropIndex(['song_id', 'parent_id']);
             $table->dropIndex(['song_id', 'created_at']);
-            
+
+            // Drop columns
             $table->dropColumn(['parent_id', 'user_id', 'depth']);
-            
+
             // Make sounding_board_member_id required again
             $table->foreignId('sounding_board_member_id')->nullable(false)->change();
         });

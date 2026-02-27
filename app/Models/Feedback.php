@@ -27,7 +27,7 @@ class Feedback extends Model
         'updated_at' => 'datetime',
     ];
 
-    protected $appends = ['author_name', 'is_by_songwriter'];
+    protected $appends = ['author_name', 'is_by_songwriter', 'author_profile_image'];
 
     /**
      * Get the song this feedback belongs to
@@ -85,7 +85,7 @@ class Feedback extends Model
     public function repliesWithUser()
     {
         return $this->hasMany(Feedback::class, 'parent_id')
-            ->with(['user', 'soundingBoardMember', 'feedbackTopic', 'repliesWithUser'])
+            ->with(['user', 'soundingBoardMember.user', 'feedbackTopic', 'repliesWithUser'])
             ->orderBy('created_at', 'desc');
     }
 
@@ -104,7 +104,7 @@ class Feedback extends Model
     {
         return $query->where('song_id', $songId)
             ->topLevel()
-            ->with(['user', 'soundingBoardMember', 'feedbackTopic', 'repliesWithUser'])
+            ->with(['user', 'soundingBoardMember.user', 'feedbackTopic', 'repliesWithUser'])
             ->orderBy('created_at', 'desc');
     }
 
@@ -129,11 +129,18 @@ class Feedback extends Model
      */
     public function getAuthorNameAttribute(): string
     {
+        // If feedback is from a user (songwriter), use their name
         if ($this->user) {
             return $this->user->name;
         }
 
+        // If feedback is from a sounding board member
         if ($this->soundingBoardMember) {
+            // If the sounding board member has a linked user account, use that user's current name
+            if ($this->soundingBoardMember->user_id && $this->soundingBoardMember->relationLoaded('user') && $this->soundingBoardMember->user) {
+                return $this->soundingBoardMember->user->name;
+            }
+            // Otherwise use the stored name from the sounding_board_members table
             return $this->soundingBoardMember->name;
         }
 
@@ -146,6 +153,24 @@ class Feedback extends Model
     public function getIsBySongwriterAttribute(): bool
     {
         return $this->isBySongwriter();
+    }
+
+    /**
+     * Get the author's profile image (from user or sounding board member's linked user)
+     */
+    public function getAuthorProfileImageAttribute(): ?string
+    {
+        // If feedback is from a user (songwriter), use their profile image
+        if ($this->user) {
+            return $this->user->profile_image;
+        }
+
+        // If feedback is from a sounding board member with a linked user account, use their profile image
+        if ($this->soundingBoardMember && $this->soundingBoardMember->user_id && $this->soundingBoardMember->user) {
+            return $this->soundingBoardMember->user->profile_image;
+        }
+
+        return null;
     }
 }
 

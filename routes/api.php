@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\SoundingBoardController;
 use App\Http\Controllers\Api\AppFeedbackController;
 use App\Http\Controllers\Api\DiscussionController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\PasswordResetController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -48,6 +49,12 @@ Route::prefix('email')->group(function () {
     });
 });
 
+// Password Reset Routes (public)
+Route::prefix('password')->group(function () {
+    Route::post('forgot', [PasswordResetController::class, 'sendResetLink']);
+    Route::post('reset', [PasswordResetController::class, 'resetPassword']);
+});
+
 // Profile Management Routes (authenticated users)
 Route::prefix('profile')->middleware('auth.token')->group(function () {
     Route::get('/', [ProfileController::class, 'show']); // Get profile
@@ -76,6 +83,7 @@ Route::get('share/{token}/check-access', [SoundingBoardController::class, 'check
 // Sounding Board Management (authenticated)
 Route::prefix('sounding-board')->middleware('auth.token')->group(function () {
     Route::get('/', [SoundingBoardController::class, 'index']); // Get all members
+    Route::get('/approved-songs', [SoundingBoardController::class, 'getApprovedSongs']); // Get approved songs for member
     Route::get('/song/{songId}', [SoundingBoardController::class, 'getSongMembers']); // Get members for specific song
     Route::post('/{memberId}/approve', [SoundingBoardController::class, 'approve']); // Approve request
     Route::post('/{memberId}/reject', [SoundingBoardController::class, 'reject']); // Reject request

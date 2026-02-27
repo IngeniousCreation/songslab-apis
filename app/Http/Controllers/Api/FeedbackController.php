@@ -103,7 +103,12 @@ class FeedbackController extends Controller
         $feedback = Feedback::whereHas('song', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })
-        ->with(['soundingBoardMember', 'feedbackTopic', 'song.feedbackTopics'])
+        ->with([
+            'soundingBoardMember.user', // Load linked user account for fresh name
+            'user', // Load user for feedback from songwriters
+            'feedbackTopic',
+            'song.feedbackTopics'
+        ])
         ->orderBy('created_at', 'desc')
         ->get();
 

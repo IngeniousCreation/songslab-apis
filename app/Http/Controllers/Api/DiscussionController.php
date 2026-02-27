@@ -178,8 +178,8 @@ class DiscussionController extends Controller
             'content' => $comment->content,
         ]);
 
-        // Load relationships
-        $comment->load(['user', 'soundingBoardMember', 'feedbackTopic']);
+        // Load relationships (including nested user for sounding board member)
+        $comment->load(['user', 'soundingBoardMember.user', 'feedbackTopic']);
         
         return response()->json([
             'success' => true,
