@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\SongController;
 use App\Http\Controllers\Api\SoundingBoardController;
 use App\Http\Controllers\Api\AppFeedbackController;
 use App\Http\Controllers\Api\DiscussionController;
+use App\Http\Controllers\Api\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -45,6 +46,14 @@ Route::prefix('email')->group(function () {
         Route::post('send-verification', [EmailVerificationController::class, 'sendVerificationEmail']);
         Route::post('resend-verification', [EmailVerificationController::class, 'resend']);
     });
+});
+
+// Profile Management Routes (authenticated users)
+Route::prefix('profile')->middleware('auth.token')->group(function () {
+    Route::get('/', [ProfileController::class, 'show']); // Get profile
+    Route::post('/', [ProfileController::class, 'update']); // Update profile (supports multipart/form-data for image)
+    Route::post('/password', [ProfileController::class, 'updatePassword']); // Update password
+    Route::delete('/image', [ProfileController::class, 'deleteProfileImage']); // Delete profile image
 });
 
 // Song Management Routes (Songwriter only)
