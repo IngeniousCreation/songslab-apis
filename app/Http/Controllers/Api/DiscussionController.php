@@ -139,7 +139,15 @@ class DiscussionController extends Controller
                 'message' => 'You do not have access to this discussion',
             ], 403);
         }
-        
+
+        // Restrict songwriter from starting new feedback threads (only allow replies)
+        if ($isSongwriter && !$request->parent_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Song owners can only reply to existing feedback, not start new threads',
+            ], 403);
+        }
+
         // Calculate depth
         $depth = 0;
         $parentId = $request->parent_id;
