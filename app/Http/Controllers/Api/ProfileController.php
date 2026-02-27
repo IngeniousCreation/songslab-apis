@@ -50,7 +50,11 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        $validator = Validator::make($request->all(), [
+        // Only allow specific fields to be updated
+        $allowedFields = ['first_name', 'last_name', 'description', 'profile_image'];
+        $requestData = $request->only($allowedFields);
+
+        $validator = Validator::make($requestData, [
             // Username and email cannot be changed after registration
             'first_name' => ['sometimes', 'required', 'string', 'max:255'],
             'last_name' => ['sometimes', 'required', 'string', 'max:255'],
