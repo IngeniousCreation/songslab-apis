@@ -47,7 +47,7 @@ class DiscussionController extends Controller
         }
 
         // Get pagination parameters
-        $limit = $request->input('limit', 10);
+        $limit = $request->input('limit', 3);
         $offset = $request->input('offset', 0);
 
         // Get total count of top-level discussions
