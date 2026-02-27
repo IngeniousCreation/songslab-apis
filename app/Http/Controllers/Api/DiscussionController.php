@@ -66,7 +66,7 @@ class DiscussionController extends Controller
             'data' => [
                 'discussions' => $discussions,
                 'total_count' => $totalCount,
-                'has_more' => ($offset + $limit) < $totalCount,
+                'has_more' => ($offset + count($discussions)) < $totalCount,
                 'song' => [
                     'id' => $song->id,
                     'title' => $song->title,
