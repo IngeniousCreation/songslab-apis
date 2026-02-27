@@ -51,10 +51,9 @@ class ProfileController extends Controller
         $user = $request->user();
 
         $validator = Validator::make($request->all(), [
-            // Username cannot be changed after registration
+            // Username and email cannot be changed after registration
             'first_name' => ['sometimes', 'required', 'string', 'max:255'],
             'last_name' => ['sometimes', 'required', 'string', 'max:255'],
-            'email' => ['sometimes', 'required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'description' => ['nullable', 'string', 'max:1000'],
             'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'], // 2MB max
         ]);
@@ -94,14 +93,7 @@ class ProfileController extends Controller
                 $user->name = $user->first_name . ' ' . $user->last_name;
             }
 
-            if ($request->has('email')) {
-                // If email changed, mark as unverified
-                if ($user->email !== $request->email) {
-                    $user->email = $request->email;
-                    $user->email_verified_at = null;
-                    // TODO: Send verification email
-                }
-            }
+            // Email cannot be changed after registration
 
             if ($request->has('description')) {
                 $user->description = $request->description;
