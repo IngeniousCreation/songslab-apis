@@ -173,6 +173,10 @@ class ProfileController extends Controller
 
         try {
             $user->password = Hash::make($request->new_password);
+
+            // Unset accessToken property set by HasApiTokens trait before saving
+            unset($user->accessToken);
+
             $user->save();
 
             // Revoke all tokens to force re-login
