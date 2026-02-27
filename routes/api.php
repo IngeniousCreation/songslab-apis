@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\FeedbackTopicController;
 use App\Http\Controllers\Api\SongController;
 use App\Http\Controllers\Api\SoundingBoardController;
 use App\Http\Controllers\Api\AppFeedbackController;
+use App\Http\Controllers\Api\DiscussionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -87,6 +88,12 @@ Route::middleware('auth.token')->group(function () {
 Route::prefix('songs/{songId}/feedback')->middleware('auth.token')->group(function () {
     Route::get('/', [FeedbackController::class, 'index']); // Get all feedback for a song
     Route::patch('/{feedbackId}/visibility', [FeedbackController::class, 'updateVisibility']); // Update visibility
+});
+
+// Threaded Discussion Routes (authenticated - songwriter and sounding board members)
+Route::prefix('songs/{songId}/discussions')->middleware('auth.token')->group(function () {
+    Route::get('/', [DiscussionController::class, 'index']); // Get all discussions (threaded comments)
+    Route::post('/', [DiscussionController::class, 'store']); // Add new comment or reply
 });
 
 // App Feedback (only authenticated users)
