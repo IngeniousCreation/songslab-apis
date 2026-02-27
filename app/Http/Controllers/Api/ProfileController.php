@@ -51,7 +51,7 @@ class ProfileController extends Controller
         $user = $request->user();
 
         $validator = Validator::make($request->all(), [
-            'username' => ['sometimes', 'required', 'string', 'max:255', 'alpha_dash', Rule::unique('users')->ignore($user->id)],
+            // Username cannot be changed after registration
             'first_name' => ['sometimes', 'required', 'string', 'max:255'],
             'last_name' => ['sometimes', 'required', 'string', 'max:255'],
             'email' => ['sometimes', 'required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
@@ -80,11 +80,7 @@ class ProfileController extends Controller
                 $user->profile_image = $path;
             }
 
-            // Update basic fields
-            if ($request->has('username')) {
-                $user->username = $request->username;
-            }
-
+            // Update basic fields (username is immutable)
             if ($request->has('first_name')) {
                 $user->first_name = $request->first_name;
             }
