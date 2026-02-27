@@ -74,18 +74,19 @@ class Feedback extends Model
      */
     public function replies()
     {
-        return $this->hasMany(Feedback::class, 'parent_id')->orderBy('created_at', 'asc');
+        return $this->hasMany(Feedback::class, 'parent_id')->orderBy('created_at', 'desc');
     }
 
     /**
      * Get all nested replies recursively (with user information)
      * This is a proper relationship that can be used with eager loading
+     * Ordered by newest first (DESC) - standard social network behavior
      */
     public function repliesWithUser()
     {
         return $this->hasMany(Feedback::class, 'parent_id')
             ->with(['user', 'soundingBoardMember', 'feedbackTopic', 'repliesWithUser'])
-            ->orderBy('created_at', 'asc');
+            ->orderBy('created_at', 'desc');
     }
 
     /**
