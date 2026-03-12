@@ -51,7 +51,7 @@ class PasswordResetController extends Controller
 
         Mail::send('emails.password-reset', ['resetUrl' => $resetUrl, 'user' => $user], function ($message) use ($user) {
             $message->to($user->email)
-                ->subject('Reset Your Password - SongsLab');
+                ->subject('Reset Your Password - SongSlab');
         });
 
         return response()->json([

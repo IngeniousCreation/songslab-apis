@@ -25,7 +25,7 @@
                             </p>
                             
                             <p style="margin: 0 0 20px; color: rgba(255, 255, 255, 0.8); font-size: 15px; line-height: 1.6;">
-                                We received a request to reset your password for your SongsLab account. Click the button below to create a new password:
+                                We received a request to reset your password for your SongSlab account. Click the button below to create a new password:
                             </p>
                             
                             <!-- Button -->
@@ -61,7 +61,7 @@
                     <tr>
                         <td style="padding: 30px 40px; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center;">
                             <p style="margin: 0 0 10px; color: rgba(255, 255, 255, 0.6); font-size: 13px;">
-                                © {{ date('Y') }} SongsLab. All rights reserved.
+                                © {{ date('Y') }} SongSlab. All rights reserved.
                             </p>
                             <p style="margin: 0; color: rgba(255, 255, 255, 0.4); font-size: 12px;">
                                 This is an automated email. Please do not reply.
