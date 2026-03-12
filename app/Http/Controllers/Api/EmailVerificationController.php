@@ -178,7 +178,7 @@ class EmailVerificationController extends Controller
                     <tr>
                         <td style="padding: 40px 40px 20px; text-align: center;">
                             <h1 style="margin: 0; color: #ffffff; font-size: 32px;">
-                                <span style="color: #ffffff;">Songs</span><span style="color: #ff8234;">lab</span>
+                                <span style="color: #ffffff;">Song</span><span style="color: #ff8234;">Slab</span>
                             </h1>
                         </td>
                     </tr>
