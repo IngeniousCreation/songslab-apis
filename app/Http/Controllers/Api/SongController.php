@@ -88,6 +88,13 @@ class SongController extends Controller
             'custom_feedback_request' => 'nullable|string|max:2000',
             'feedback_topic_ids' => 'nullable|array',
             'feedback_topic_ids.*' => 'exists:feedback_topics,id',
+            'feedback_tone' => 'nullable|in:gentle,honest',
+            'song_goals' => 'nullable|array',
+            'song_goals.releaseAsArtist' => 'nullable|in:true,false,1,0',
+            'song_goals.placement' => 'nullable|in:true,false,1,0',
+            'song_goals.pitchToArtists' => 'nullable|in:true,false,1,0',
+            'song_goals.other' => 'nullable|in:true,false,1,0',
+            'song_goals.otherText' => 'nullable|string|max:300',
         ]);
 
         if ($validator->fails()) {
@@ -100,6 +107,18 @@ class SongController extends Controller
 
         $user = $request->user();
 
+        // Process song_goals to convert string 'true' to boolean true
+        $songGoals = null;
+        if ($request->has('song_goals') && is_array($request->song_goals)) {
+            $songGoals = [
+                'releaseAsArtist' => isset($request->song_goals['releaseAsArtist']) && $request->song_goals['releaseAsArtist'] === 'true',
+                'placement' => isset($request->song_goals['placement']) && $request->song_goals['placement'] === 'true',
+                'pitchToArtists' => isset($request->song_goals['pitchToArtists']) && $request->song_goals['pitchToArtists'] === 'true',
+                'other' => isset($request->song_goals['other']) && $request->song_goals['other'] === 'true',
+                'otherText' => $request->song_goals['otherText'] ?? null,
+            ];
+        }
+
         // Create song record
         $song = Song::create([
             'user_id' => $user->id,
@@ -107,6 +126,8 @@ class SongController extends Controller
             'description' => $request->description,
             'development_stage' => $request->development_stage,
             'custom_feedback_request' => $request->custom_feedback_request,
+            'feedback_tone' => $request->feedback_tone,
+            'song_goals' => $songGoals,
         ]);
 
         // Handle audio file upload
@@ -380,7 +401,7 @@ class SongController extends Controller
         $email = $request->query('email');
 
         $song = Song::byShareToken($token)
-            ->with(['user:id,name'])
+            ->with(['user:id,name', 'feedbackTopics'])
             ->first();
 
         if (!$song) {
@@ -399,6 +420,7 @@ class SongController extends Controller
                         'id' => $song->id,
                         'title' => $song->title,
                         'user' => $song->user,
+                        'feedback_topics' => $song->feedbackTopics,
                     ],
                     'requires_verification' => true,
                 ],
@@ -418,6 +440,7 @@ class SongController extends Controller
                         'id' => $song->id,
                         'title' => $song->title,
                         'user' => $song->user,
+                        'feedback_topics' => $song->feedbackTopics,
                     ],
                     'requires_verification' => true,
                 ],
@@ -433,6 +456,7 @@ class SongController extends Controller
                         'id' => $song->id,
                         'title' => $song->title,
                         'user' => $song->user,
+                        'feedback_topics' => $song->feedbackTopics,
                     ],
                     'status' => 'pending',
                     'requested_at' => $member->requested_at,
@@ -449,6 +473,7 @@ class SongController extends Controller
                         'id' => $song->id,
                         'title' => $song->title,
                         'user' => $song->user,
+                        'feedback_topics' => $song->feedbackTopics,
                     ],
                     'status' => 'rejected',
                     'rejection_reason' => $member->rejection_reason,

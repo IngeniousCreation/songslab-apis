@@ -16,11 +16,14 @@ class Song extends Model
         'description',
         'development_stage',
         'custom_feedback_request',
+        'feedback_tone',
+        'song_goals',
         'share_token',
         'feedback_count',
     ];
 
     protected $casts = [
+        'song_goals' => 'array',
         'feedback_count' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
