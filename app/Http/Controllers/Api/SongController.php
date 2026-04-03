@@ -55,7 +55,7 @@ class SongController extends Controller
         
         $song = Song::where('id', $id)
             ->where('user_id', $user->id)
-            ->with(['currentAudioFile', 'audioFiles', 'lyrics.file'])
+            ->with(['currentAudioFile', 'audioFiles', 'lyrics.file', 'user:id,name,email,profile_image', 'feedbackTopics'])
             ->first();
         
         if (!$song) {
@@ -401,7 +401,7 @@ class SongController extends Controller
         $email = $request->query('email');
 
         $song = Song::byShareToken($token)
-            ->with(['user:id,name', 'feedbackTopics'])
+            ->with(['user:id,name,profile_image', 'feedbackTopics'])
             ->first();
 
         if (!$song) {
@@ -493,4 +493,3 @@ class SongController extends Controller
         ]);
     }
 }
-

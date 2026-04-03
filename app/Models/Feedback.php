@@ -19,10 +19,15 @@ class Feedback extends Model
         'depth',
         'feedback_topic_id',
         'content',
+        'is_hidden_by_songwriter',
+        'hidden_by_user_id',
+        'hidden_at',
     ];
 
     protected $casts = [
         'depth' => 'integer',
+        'is_hidden_by_songwriter' => 'boolean',
+        'hidden_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -59,6 +64,14 @@ class Feedback extends Model
     public function feedbackTopic()
     {
         return $this->belongsTo(FeedbackTopic::class);
+    }
+
+    /**
+     * Get the songwriter user who hid this feedback (if hidden).
+     */
+    public function hiddenByUser()
+    {
+        return $this->belongsTo(User::class, 'hidden_by_user_id');
     }
 
     /**
@@ -170,7 +183,28 @@ class Feedback extends Model
             return $this->soundingBoardMember->user->profile_image;
         }
 
+        // Fallback: member may exist by email but not yet linked via user_id.
+        if ($this->soundingBoardMember && !empty($this->soundingBoardMember->email)) {
+            static $emailToProfileImage = [];
+            $email = strtolower(trim($this->soundingBoardMember->email));
+            if (array_key_exists($email, $emailToProfileImage)) {
+                return $emailToProfileImage[$email];
+            }
+
+            $matchedUser = User::where('email', $email)->select(['id', 'profile_image'])->first();
+            if ($matchedUser) {
+                // Auto-link to prevent repeated fallback lookups in future requests.
+                if (empty($this->soundingBoardMember->user_id)) {
+                    $this->soundingBoardMember->user_id = $matchedUser->id;
+                    $this->soundingBoardMember->save();
+                }
+                $emailToProfileImage[$email] = $matchedUser->profile_image;
+                return $matchedUser->profile_image;
+            }
+
+            $emailToProfileImage[$email] = null;
+        }
+
         return null;
     }
 }
-

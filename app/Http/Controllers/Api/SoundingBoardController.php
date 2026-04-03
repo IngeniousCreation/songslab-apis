@@ -202,9 +202,7 @@ class SoundingBoardController extends Controller
     {
         $user = $request->user();
 
-        $song = Song::where('id', $songId)
-            ->where('user_id', $user->id)
-            ->first();
+        $song = Song::find($songId);
 
         if (!$song) {
             return response()->json([
@@ -213,9 +211,53 @@ class SoundingBoardController extends Controller
             ], 404);
         }
 
+        $isSongwriter = (int) $song->user_id === (int) $user->id;
+        $isApprovedMember = SoundingBoardMember::where('song_id', $songId)
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhere('email', $user->email);
+            })
+            ->where('status', 'approved')
+            ->exists();
+
+        if (!$isSongwriter && !$isApprovedMember) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have access to this song members list',
+            ], 403);
+        }
+
         $members = $song->soundingBoardMembers()
+            ->with(['user:id,name,email,profile_image'])
             ->orderBy('requested_at', 'desc')
             ->get();
+
+        // Backfill link by email so profile images/names show even for legacy unlinked rows.
+        $emails = $members->pluck('email')->filter()->map(fn ($email) => strtolower(trim($email)))->unique()->values();
+        if ($emails->isNotEmpty()) {
+            $usersByEmail = User::whereIn('email', $emails)
+                ->select(['id', 'name', 'email', 'profile_image'])
+                ->get()
+                ->keyBy(fn ($u) => strtolower($u->email));
+
+            $members->each(function ($member) use ($usersByEmail) {
+                if ($member->user) {
+                    return;
+                }
+                $emailKey = strtolower(trim((string) $member->email));
+                if (!$emailKey || !$usersByEmail->has($emailKey)) {
+                    return;
+                }
+
+                $matchedUser = $usersByEmail->get($emailKey);
+                $member->setRelation('user', $matchedUser);
+
+                if (empty($member->user_id)) {
+                    $member->user_id = $matchedUser->id;
+                    $member->save();
+                }
+            });
+        }
 
         return response()->json([
             'success' => true,
@@ -601,4 +643,3 @@ HTML;
 HTML;
     }
 }
-

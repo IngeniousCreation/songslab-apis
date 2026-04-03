@@ -111,6 +111,7 @@ Route::prefix('songs/{songId}/feedback')->middleware('auth.token')->group(functi
 Route::prefix('songs/{songId}/discussions')->middleware('auth.token')->group(function () {
     Route::get('/', [DiscussionController::class, 'index']); // Get all discussions (threaded comments)
     Route::post('/', [DiscussionController::class, 'store']); // Add new comment or reply
+    Route::patch('/{discussionId}/hidden', [DiscussionController::class, 'updateHiddenStatus']); // Hide/unhide discussion visibility for circle
 });
 
 // App Feedback (only authenticated users)

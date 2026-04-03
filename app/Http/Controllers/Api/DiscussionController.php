@@ -8,10 +8,83 @@ use App\Models\Song;
 use App\Models\SoundingBoardMember;
 use App\Utils\ContentFilter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 
 class DiscussionController extends Controller
 {
+    /**
+     * Feature-flag by schema presence so old DBs don't hard-crash before migration.
+     */
+    private function supportsHiddenVisibility(): bool
+    {
+        static $supported = null;
+        if ($supported !== null) {
+            return $supported;
+        }
+
+        $supported = Schema::hasColumns('feedback', [
+            'is_hidden_by_songwriter',
+            'hidden_by_user_id',
+            'hidden_at',
+        ]);
+
+        return $supported;
+    }
+
+    /**
+     * Resolve approved sounding board member IDs for the current user on this song.
+     */
+    private function getViewerMemberIds(int $songId, $user): array
+    {
+        return SoundingBoardMember::where('song_id', $songId)
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhere('email', $user->email);
+            })
+            ->where('status', 'approved')
+            ->pluck('id')
+            ->toArray();
+    }
+
+    /**
+     * Check if a discussion item is visible to the current viewer.
+     */
+    private function canViewDiscussion(Feedback $discussion, bool $isSongwriter, array $viewerMemberIds): bool
+    {
+        if (!$this->supportsHiddenVisibility()) {
+            return true;
+        }
+
+        if (!$discussion->is_hidden_by_songwriter) {
+            return true;
+        }
+
+        if ($isSongwriter) {
+            return true;
+        }
+
+        return $discussion->sounding_board_member_id !== null
+            && in_array($discussion->sounding_board_member_id, $viewerMemberIds, true);
+    }
+
+    /**
+     * Recursively filter discussion tree based on per-viewer visibility.
+     */
+    private function filterVisibleTree($items, bool $isSongwriter, array $viewerMemberIds)
+    {
+        return collect($items)
+            ->filter(fn ($item) => $this->canViewDiscussion($item, $isSongwriter, $viewerMemberIds))
+            ->map(function ($item) use ($isSongwriter, $viewerMemberIds) {
+                $replies = $item->repliesWithUser ?? $item->replies ?? collect();
+                $filteredReplies = $this->filterVisibleTree($replies, $isSongwriter, $viewerMemberIds);
+                $item->setRelation('repliesWithUser', $filteredReplies);
+                $item->setRelation('replies', $filteredReplies);
+                return $item;
+            })
+            ->values();
+    }
+
     /**
      * Get all discussions (threaded comments) for a song
      * Accessible by: Songwriter (owner) and all Sounding Board members
@@ -47,20 +120,26 @@ class DiscussionController extends Controller
             ], 403);
         }
 
+        $viewerMemberIds = $this->getViewerMemberIds((int) $songId, $user);
+
         // Get pagination parameters
         $limit = $request->input('limit', 3);
         $offset = $request->input('offset', 0);
 
-        // Get total count of top-level discussions
-        $totalCount = Feedback::where('song_id', $songId)
-            ->topLevel()
-            ->count();
+        // Get total count of visible top-level discussions for this viewer
+        $totalCountQuery = Feedback::where('song_id', $songId)->topLevel();
+        if (!$isSongwriter && $this->supportsHiddenVisibility()) {
+            $totalCountQuery->where(function ($query) use ($viewerMemberIds) {
+                $query->where('is_hidden_by_songwriter', false)
+                    ->orWhereIn('sounding_board_member_id', $viewerMemberIds);
+            });
+        }
+        $totalCount = $totalCountQuery->count();
 
-        // Get paginated top-level comments with nested replies
-        $discussions = Feedback::forSongWithReplies($songId)
-            ->skip($offset)
-            ->take($limit)
-            ->get();
+        // Get top-level comments (then apply visibility filter before pagination for non-songwriters)
+        $allTopLevel = Feedback::forSongWithReplies($songId)->get();
+        $visibleTopLevel = $this->filterVisibleTree($allTopLevel, $isSongwriter, $viewerMemberIds);
+        $discussions = $visibleTopLevel->slice($offset, $limit)->values();
 
         return response()->json([
             'success' => true,
@@ -155,6 +234,23 @@ class DiscussionController extends Controller
         if ($parentId) {
             $parentComment = Feedback::find($parentId);
             if ($parentComment) {
+                if ((int) $parentComment->song_id !== (int) $songId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Parent discussion does not belong to this song',
+                    ], 422);
+                }
+
+                if ($this->supportsHiddenVisibility()) {
+                    $viewerMemberIds = $this->getViewerMemberIds((int) $songId, $user);
+                    if (!$this->canViewDiscussion($parentComment, $isSongwriter, $viewerMemberIds)) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'You cannot reply to this hidden discussion',
+                        ], 403);
+                    }
+                }
+
                 $depth = $parentComment->depth + 1;
             }
         }
@@ -189,5 +285,81 @@ class DiscussionController extends Controller
             ],
         ], 201);
     }
-}
 
+    /**
+     * Hide/unhide a discussion item.
+     * Only the songwriter who owns the song can toggle this,
+     * and only for sounding board member feedback.
+     */
+    public function updateHiddenStatus(Request $request, $songId, $discussionId)
+    {
+        $user = $request->user();
+
+        if (!$this->supportsHiddenVisibility()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This feature requires a database migration. Please run latest migrations and try again.',
+            ], 409);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'hidden' => 'required|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $song = Song::find($songId);
+        if (!$song) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Song not found',
+            ], 404);
+        }
+
+        if ((int) $song->user_id !== (int) $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only the songwriter can hide/unhide discussions',
+            ], 403);
+        }
+
+        $discussion = Feedback::where('song_id', $songId)->find($discussionId);
+        if (!$discussion) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Discussion not found',
+            ], 404);
+        }
+
+        // Songwriter comments should remain visible to everyone.
+        if ($discussion->isBySongwriter()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Songwriter comments cannot be hidden',
+            ], 422);
+        }
+
+        $hidden = (bool) $request->boolean('hidden');
+        $discussion->update([
+            'is_hidden_by_songwriter' => $hidden,
+            'hidden_by_user_id' => $hidden ? $user->id : null,
+            'hidden_at' => $hidden ? now() : null,
+        ]);
+
+        $discussion->load(['user', 'soundingBoardMember.user', 'feedbackTopic']);
+
+        return response()->json([
+            'success' => true,
+            'message' => $hidden ? 'Discussion hidden from other members' : 'Discussion is visible to the full circle',
+            'data' => [
+                'discussion' => $discussion,
+            ],
+        ]);
+    }
+}
