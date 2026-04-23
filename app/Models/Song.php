@@ -169,7 +169,7 @@ class Song extends Model
             $this->generateShareToken();
         }
 
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3004');
+        $frontendUrl = config('app.frontend_url', 'http://localhost:3004');
         return "{$frontendUrl}/share/{$this->share_token}";
     }
 
@@ -231,4 +231,3 @@ class Song extends Model
             ->exists();
     }
 }
-

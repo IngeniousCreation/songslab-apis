@@ -56,6 +56,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend URL
+    |--------------------------------------------------------------------------
+    |
+    | Used for generating links that point users back to the web app
+    | (share links, email links, dashboard links, etc.).
+    |
+    */
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:3004'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
