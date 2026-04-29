@@ -35,9 +35,10 @@ return [
         ],
     ],
 
-    'mailtrap' => [
-        'api_token' => env('MAILTRAP_API_TOKEN'),
-        'recipient_email' => env('MAILTRAP_RECIPIENT_EMAIL'),
+    'brevo' => [
+        'smtp_host' => env('MAIL_HOST', 'smtp-relay.brevo.com'),
+        'smtp_port' => env('MAIL_PORT', 587),
+        'smtp_login' => env('MAIL_USERNAME'),
     ],
 
 ];
