@@ -82,7 +82,7 @@ class SongController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:300',
             'development_stage' => 'required|in:new_idea,early_stage,mid_stage,ready_for_touches,done_recording',
-            'audio_file' => 'required|file|mimes:mp3,wav,m4a|max:51200', // 50MB max
+            'audio_file' => 'required|file|mimes:mp3,m4a|max:10240', // 10MB max
             'lyrics_text' => 'nullable|string',
             'lyrics_file' => 'nullable|file|mimes:pdf|max:5120', // 5MB max
             'custom_feedback_request' => 'nullable|string|max:2000',
@@ -95,6 +95,11 @@ class SongController extends Controller
             'song_goals.pitchToArtists' => 'nullable|in:true,false,1,0',
             'song_goals.other' => 'nullable|in:true,false,1,0',
             'song_goals.otherText' => 'nullable|string|max:300',
+        ], [
+            'audio_file.mimes' => 'The audio file must be an MP3 or M4A file.',
+            'audio_file.max' => 'The audio file must not exceed 10 MB.',
+            'lyrics_file.mimes' => 'The lyrics file must be a PDF document.',
+            'lyrics_file.max' => 'The lyrics file must not exceed 5 MB.',
         ]);
 
         if ($validator->fails()) {
@@ -294,7 +299,10 @@ class SongController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'audio_file' => 'required|file|mimes:mp3,wav,m4a|max:51200', // 50MB max
+            'audio_file' => 'required|file|mimes:mp3,m4a|max:10240', // 10MB max
+        ], [
+            'audio_file.mimes' => 'The audio file must be an MP3 or M4A file.',
+            'audio_file.max' => 'The audio file must not exceed 10 MB.',
         ]);
 
         if ($validator->fails()) {
