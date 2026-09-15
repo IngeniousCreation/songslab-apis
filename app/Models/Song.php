@@ -15,6 +15,7 @@ class Song extends Model
         'title',
         'description',
         'development_stage',
+        'critique_scope',
         'custom_feedback_request',
         'feedback_tone',
         'song_goals',
@@ -143,6 +144,28 @@ class Song extends Model
             'done_recording' => 'Done Recording, Adjusting Mix/Mastering',
             default => $this->development_stage,
         };
+    }
+
+    /**
+     * Get critique scope label
+     */
+    public function getCritiqueScopeLabel(): ?string
+    {
+        return match($this->critique_scope) {
+            'song_only' => 'Please critique the song itself only.',
+            'song_and_arrangement' => 'Please critique the song as well as the instrumentation and arrangement.',
+            'production' => 'Please focus your feedback on critiques of the production as this is a draft of the recording I will be releasing.',
+            default => null,
+        };
+    }
+
+    /**
+     * Whether the song sits under the "draft of the recording I intend to
+     * release" heading, as opposed to being a demo recording.
+     */
+    public function isReleaseDraft(): bool
+    {
+        return in_array($this->development_stage, ['ready_for_touches', 'done_recording'], true);
     }
 
     /**
