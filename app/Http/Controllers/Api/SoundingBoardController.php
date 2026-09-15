@@ -169,7 +169,7 @@ class SoundingBoardController extends Controller
             })
             ->where('status', 'approved')
             ->with(['song' => function ($query) {
-                $query->select('id', 'title', 'description', 'development_stage', 'share_token', 'user_id', 'created_at')
+                $query->select('id', 'title', 'description', 'development_stage', 'critique_scope', 'share_token', 'user_id', 'created_at')
                       ->with(['user:id,name,email', 'currentAudioFile']);
             }])
             ->orderBy('responded_at', 'desc');

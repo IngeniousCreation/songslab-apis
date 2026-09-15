@@ -82,6 +82,7 @@ class SongController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:300',
             'development_stage' => 'required|in:new_idea,early_stage,mid_stage,ready_for_touches,done_recording',
+            'critique_scope' => 'nullable|in:song_only,song_and_arrangement,production',
             'audio_file' => 'required|file|mimes:mp3,m4a|max:10240', // 10MB max
             'lyrics_text' => 'nullable|string',
             'lyrics_file' => 'nullable|file|mimes:pdf|max:5120', // 5MB max
@@ -130,6 +131,7 @@ class SongController extends Controller
             'title' => $request->title,
             'description' => $request->description,
             'development_stage' => $request->development_stage,
+            'critique_scope' => $request->critique_scope,
             'custom_feedback_request' => $request->custom_feedback_request,
             'feedback_tone' => $request->feedback_tone,
             'song_goals' => $songGoals,
@@ -226,6 +228,7 @@ class SongController extends Controller
             'title' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string|max:300',
             'development_stage' => 'sometimes|required|in:new_idea,early_stage,mid_stage,ready_for_touches,done_recording',
+            'critique_scope' => 'sometimes|nullable|in:song_only,song_and_arrangement,production',
         ]);
 
         if ($validator->fails()) {
@@ -236,7 +239,7 @@ class SongController extends Controller
             ], 422);
         }
 
-        $song->update($request->only(['title', 'description', 'development_stage']));
+        $song->update($request->only(['title', 'description', 'development_stage', 'critique_scope']));
         $song->load(['currentAudioFile', 'lyrics.file']);
 
         return response()->json([
